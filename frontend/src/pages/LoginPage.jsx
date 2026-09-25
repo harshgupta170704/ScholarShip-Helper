@@ -77,6 +77,18 @@ const LoginPage = () => {
             className="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-xl hover:bg-indigo-700 transition duration-200 shadow-md">
             Sign In
           </button>
+          
+          <div className="mt-6 flex items-center justify-center">
+            <span className="h-px bg-gray-300 flex-1"></span>
+            <span className="px-4 text-sm text-gray-500">OR</span>
+            <span className="h-px bg-gray-300 flex-1"></span>
+          </div>
+          
+          <button type="button" onClick={() => navigate(role === 'admin' ? '/admin' : '/chat')}
+            className="mt-6 w-full bg-white border border-gray-300 text-gray-700 font-bold py-3 px-4 rounded-xl hover:bg-gray-50 transition duration-200 shadow-sm flex items-center justify-center">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google logo" className="w-5 h-5 mr-3" />
+            Continue with Gmail
+          </button>
         </form>
       </div>
     </div>
