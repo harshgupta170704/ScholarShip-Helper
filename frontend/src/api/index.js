@@ -62,4 +62,47 @@ export default {
     });
     return res.data;
   },
+
+  async getAdminApplications() {
+    // Mock API call for admin applications
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve([
+          {
+            id: 'APP001',
+            studentName: 'Harsh Gupta',
+            email: 'harsh@example.com',
+            scholarshipName: 'Post Matric Scholarship',
+            dateApplied: '2023-10-15',
+            status: 'Pending',
+            documents: [
+              { id: 'doc_1', name: 'Aadhaar Card', status: 'Pending' },
+              { id: 'doc_2', name: 'Income Certificate', status: 'Verified' }
+            ]
+          },
+          {
+            id: 'APP002',
+            studentName: 'Riya Singh',
+            email: 'riya@example.com',
+            scholarshipName: 'Medhavi Chhatra Yojana',
+            dateApplied: '2023-10-16',
+            status: 'Approved',
+            documents: [
+              { id: 'doc_3', name: '10th Marksheet', status: 'Verified' },
+              { id: 'doc_4', name: '12th Marksheet', status: 'Verified' }
+            ]
+          }
+        ]);
+      }, 1000);
+    });
+  },
+
+  async verifyDocument(docId) {
+    // Mock API call for document verification
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({ success: true, message: `Document ${docId} verified successfully` });
+      }, 500);
+    });
+  }
 };

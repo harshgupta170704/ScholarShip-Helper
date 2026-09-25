@@ -152,6 +152,64 @@ class ChatbotService:
         current_step = session.current_step
         collected = dict(session.collected_data)
 
+        # ─── HINDI INTERCEPTION ─────────────────────────────────────
+        if message and message.strip().lower() in ['[hindi]', 'explain in hindi']:
+            hindi_translations = {
+                'ask_name': "Aapka poora naam kya hai?",
+                'ask_father_name': "Aapke pitaji ka poora naam kya hai?",
+                'ask_mother_name': "Aapki mataji ka poora naam kya hai?",
+                'ask_dob': "Aapki janam tithi (Date of Birth) kya hai? (YYYY-MM-DD)",
+                'ask_gender': "Aapka ling (Gender) kya hai?",
+                'ask_category': "Aapki jati shreni (Category) kya hai?",
+                'ask_religion': "Aapka dharm (Religion) kya hai?",
+                'ask_mobile': "Aapka 10-digit mobile number kya hai?",
+                'ask_email': "Aapka email address kya hai?",
+                'ask_pan': "Aapka PAN Card number kya hai?",
+                'ask_aadhaar': "Aapka 12-digit Aadhaar number kya hai?",
+                'ask_state': "Aap kis rajya (State) se hain?",
+                'ask_samagra': "Aapki Samagra ID kya hai?",
+                'ask_district': "Aapka zila (District) kaun sa hai?",
+                'ask_address': "Aapka poora pata (Address) kya hai?",
+                'ask_pincode': "Aapke area ka pincode kya hai?",
+                'ask_income': "Aapke parivar ki kul varshik aay (Annual Income) kitni hai?",
+                'ask_bpl': "Kya aapke paas BPL card hai?",
+                'ask_disability': "Kya aapko koi divyangta (Disability) hai?",
+                'ask_10th_board': "Aapne 10vi kaksha kis board se pass ki hai?",
+                'ask_10th_percentage': "Aapke 10vi mein kitne percentage/CGPA the?",
+                'ask_10th_year': "Aapne 10vi kis saal mein pass ki?",
+                'ask_12th_board': "Aapne 12vi kaksha kis board se pass ki hai?",
+                'ask_12th_percentage': "Aapke 12vi mein kitne percentage the?",
+                'ask_12th_year': "Aapne 12vi kis saal mein pass ki?",
+                'ask_12th_stream': "12vi mein aapka kaun sa vishay (Stream) tha?",
+                'ask_current_course': "Aap vartaman mein kaun sa course kar rahe hain?",
+                'ask_current_year': "Aap padhai ke kis varsh (Year) mein hain?",
+                'ask_institution': "Aapke college/university ka kya naam hai?",
+                'ask_institution_type': "Kya aapka sansthan (Institution) Government hai ya Private?",
+                'ask_rural_urban': "Kya aap gramin (Rural) kshetra mein rehte hain ya shahari (Urban)?",
+                'ask_bank_account': "Aapka bank account number kya hai?",
+                'ask_ifsc': "Aapke bank ka IFSC code kya hai?",
+                'ask_achievements': "Kya aapne competitive exams, olympiads, ya sports mein koi upalabdhi (Achievement) haasil ki hai?",
+                'ask_achievement_details': "Aapki upalabdhi (Achievement) kaun si hai?",
+                'ask_achievement_year': "Aapne yeh upalabdhi kis saal haasil ki thi?",
+                'ask_more_achievements': "Kya aapke paas koi aur upalabdhi hai?",
+                'doc_aadhaar': "Kripya apne Aadhaar Card ki saaf photo upload karein.",
+                'doc_pan': "Kripya apne PAN Card ki saaf photo upload karein.",
+                'doc_marksheet_10': "Kripya apni 10vi ki marksheet upload karein.",
+                'doc_marksheet_12': "Kripya apni 12vi ki marksheet upload karein.",
+                'doc_income_cert': "Kripya apna Aay Praman Patra (Income Certificate) upload karein.",
+                'doc_caste_cert': "Kripya apna Jati Praman Patra (Caste Certificate) upload karein.",
+                'doc_domicile': "Kripya apna Mool Niwas Praman Patra (Domicile Certificate) upload karein.",
+                'welcome': "Aapka poora naam kya hai?"
+            }
+            hindi_msg = hindi_translations.get(current_step, "Kripya poochi gayi jankari dein.")
+            return self._make_response(
+                session_id,
+                f"📝 **Hindi Translation:**\n{hindi_msg}",
+                current_step,
+                options=self._get_step_options(current_step),
+                requires_file=current_step in DOC_STEPS
+            )
+
         # ─── WELCOME ────────────────────────────────────────────────
         if current_step == 'welcome':
             session.current_step = 'ask_name'
@@ -489,12 +547,49 @@ class ChatbotService:
             )
 
         # ─── REGULAR INPUT STEPS ────────────────────────────────────
-        is_valid, error_msg, formatted_value = await self.validate_input(current_step, message)
-        if not is_valid:
+        session_data_dict = dict(session.session_data) if session.session_data else {}
+        is_confirming = session_data_dict.get('pending_confirmation_step') == current_step
+
+        if is_confirming:
+            if message.strip().lower() in ['yes', 'y', 'haan', 'ha']:
+                formatted_value = session_data_dict.get('pending_value')
+                # Clear confirmation state
+                session_data_dict.pop('pending_confirmation_step', None)
+                session_data_dict.pop('pending_value', None)
+                session.session_data = session_data_dict
+            else:
+                # User said No, clear state and ask again
+                session_data_dict.pop('pending_confirmation_step', None)
+                session_data_dict.pop('pending_value', None)
+                session.session_data = session_data_dict
+                await self.db.commit()
+                msg = await self.generate_step_message(current_step, collected)
+                return self._make_response(
+                    session_id,
+                    f"Okay, let's try again.\n\n{msg}",
+                    current_step,
+                    options=self._get_step_options(current_step),
+                    requires_file=current_step in DOC_STEPS
+                )
+        else:
+            is_valid, error_msg, formatted_value = await self.validate_input(current_step, message)
+            if not is_valid:
+                return self._make_response(
+                    session_id,
+                    f"❌ {error_msg}\n\nPlease try again.",
+                    current_step
+                )
+                
+            # If valid, trigger confirmation
+            session_data_dict['pending_confirmation_step'] = current_step
+            session_data_dict['pending_value'] = formatted_value
+            session.session_data = session_data_dict
+            await self.db.commit()
             return self._make_response(
                 session_id,
-                f"❌ {error_msg}\n\nPlease try again.",
-                current_step
+                f"You entered: {formatted_value}. Is this correct?",
+                current_step,
+                options=["Yes", "No"]
             )
 
         # Store validated data

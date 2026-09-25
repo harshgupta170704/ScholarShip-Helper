@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { GraduationCap, MessageSquare, BookOpen, Clock, Menu } from 'lucide-react';
+import { GraduationCap, MessageSquare, BookOpen, Clock, Menu, User } from 'lucide-react';
 
 const Navbar = () => {
   const location = useLocation();
@@ -11,6 +11,7 @@ const Navbar = () => {
     { name: 'ChatBot', path: '/chat', icon: <MessageSquare className="w-5 h-5" /> },
     { name: 'Scholarships', path: '/scholarships', icon: <BookOpen className="w-5 h-5" /> },
     { name: 'Track Status', path: '/track', icon: <Clock className="w-5 h-5" /> },
+    { name: 'Login', path: '/login', icon: <User className="w-5 h-5" /> },
   ];
 
   return (

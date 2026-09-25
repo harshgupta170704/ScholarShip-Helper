@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Paperclip, RotateCcw, FileText } from 'lucide-react';
+import { Send, Paperclip, RotateCcw, FileText, Mic, MicOff } from 'lucide-react';
 import ChatBubble from '../components/ChatBubble';
 import QuickReply from '../components/QuickReply';
 import ProgressSidebar from '../components/ProgressSidebar';
@@ -47,6 +47,8 @@ const ChatPage = () => {
   const [showFormPreview, setShowFormPreview] = useState(null); // { schemeName, shortName }
   const [scholarshipsData, setScholarshipsData] = useState(null);
 
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef(null);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -54,6 +56,41 @@ const ChatPage = () => {
   };
 
   useEffect(() => { scrollToBottom(); }, [messages, isTyping, showUpload, showFormPreview]);
+
+  // Initialize Speech Recognition
+  useEffect(() => {
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.interimResults = false;
+      
+      recognitionRef.current.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        setInputValue((prev) => prev + (prev ? ' ' : '') + transcript);
+        setIsListening(false);
+      };
+      
+      recognitionRef.current.onerror = (event) => {
+        console.error("Speech recognition error", event.error);
+        setIsListening(false);
+      };
+      
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+      };
+    }
+  }, []);
+
+  const toggleListen = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+    } else {
+      recognitionRef.current?.start();
+      setIsListening(true);
+    }
+  };
 
   // Initialize chat session
   useEffect(() => {
@@ -102,7 +139,9 @@ const ChatPage = () => {
       });
     }
     setMessages(newMessages);
-    setInputValue('');
+    if (!text || text !== "[HINDI]") {
+        setInputValue('');
+    }
     setIsTyping(true);
     setShowUpload(false);
 
@@ -204,7 +243,7 @@ const ChatPage = () => {
         <div className="flex-1 overflow-y-auto p-4 md:p-6">
           {messages.map((msg, idx) => (
             <React.Fragment key={msg.id}>
-              <ChatBubble message={msg} />
+              <ChatBubble message={msg} onTranslate={() => handleSendMessage("[HINDI]")} />
 
               {/* Quick reply buttons for the last bot message */}
               {idx === messages.length - 1 && msg.type === 'bot' && msg.options && (
@@ -313,6 +352,10 @@ const ChatPage = () => {
                 }}
               />
             </div>
+            <button type="button" onClick={toggleListen}
+              className={`p-3 rounded-full shadow-md transition-colors ${isListening ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-white text-gray-500 hover:text-indigo-600'}`}>
+              {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+            </button>
             <button type="submit" disabled={!inputValue.trim()}
               className="p-3 bg-indigo-600 text-white rounded-full shadow-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
               <Send className="w-5 h-5" />

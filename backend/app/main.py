@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 
 from app.database import engine, Base
-from app.routes import chat, scholarships, documents, students
+from app.routes import chat, scholarships, documents, students, admin
 from app.scholarship_data import seed_scholarships
 
 app = FastAPI(title="ScholarSetu API", description="AI-powered scholarship chatbot backend")
@@ -35,3 +35,4 @@ app.include_router(chat.router)
 app.include_router(scholarships.router)
 app.include_router(documents.router)
 app.include_router(students.router)
+app.include_router(admin.router)
