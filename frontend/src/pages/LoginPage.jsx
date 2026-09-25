@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, ShieldCheck, UserPlus, LogIn, ArrowLeft } from 'lucide-react';
+import { GoogleLogin } from '@react-oauth/google';
+import { jwtDecode } from 'jwt-decode';
 
 const LoginPage = () => {
   const [step, setStep] = useState(1); // 1: Role, 2: Student Action (New/Old), 3: Credentials Form
@@ -181,11 +183,23 @@ const LoginPage = () => {
                 <span className="h-px bg-gray-300 flex-1"></span>
               </div>
               
-              <button type="button" onClick={handleGmailLogin}
-                className="mt-6 w-full bg-white border border-gray-300 text-gray-700 font-bold py-3 px-4 rounded-xl hover:bg-gray-50 transition duration-200 shadow-sm flex items-center justify-center">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google logo" className="w-5 h-5 mr-3" />
-                Continue with Gmail
-              </button>
+              <div className="mt-6 flex justify-center">
+                <GoogleLogin
+                  onSuccess={(credentialResponse) => {
+                    const decoded = jwtDecode(credentialResponse.credential);
+                    console.log('Google User:', decoded);
+                    // Same logic as before
+                    if (role === 'admin') navigate('/admin');
+                    else if (studentAction === 'register') navigate('/chat');
+                    else navigate('/track');
+                  }}
+                  onError={() => {
+                    console.error('Login Failed');
+                  }}
+                  text="continue_with"
+                  width="100%"
+                />
+              </div>
             </form>
           )}
         </div>
