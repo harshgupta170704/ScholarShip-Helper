@@ -11,10 +11,10 @@ const LandingPage = () => {
           <h1 className="text-5xl md:text-6xl font-bold mb-6">ScholarSetu</h1>
           <p className="text-xl md:text-2xl mb-10 text-indigo-100">Your AI-Powered Scholarship Assistant</p>
           <Link 
-            to="/chat" 
+            to="/login" 
             className="inline-flex items-center bg-white text-indigo-600 px-8 py-4 rounded-full font-bold text-lg shadow-lg hover:bg-indigo-50 transition-colors"
           >
-            Start Chat <MessageSquare className="ml-2 w-5 h-5" />
+            Login to Start <MessageSquare className="ml-2 w-5 h-5" />
           </Link>
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-16 text-center">
