@@ -47,6 +47,32 @@ const LoginPage = () => {
             </div>
           </div>
           
+          <div className="mb-4">
+            <label className="block text-gray-700 font-semibold mb-2" htmlFor="userId">
+              {role === 'student' ? 'PAN Card / Samagra ID' : 'Admin ID / Email'}
+            </label>
+            <input 
+              id="userId"
+              type="text" 
+              required
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+              placeholder={role === 'student' ? 'e.g. ABCDE1234F' : 'admin@scholarsetu.gov'}
+            />
+          </div>
+
+          <div className="mb-8">
+            <label className="block text-gray-700 font-semibold mb-2" htmlFor="password">
+              Password
+            </label>
+            <input 
+              id="password"
+              type="password" 
+              required
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+              placeholder="••••••••"
+            />
+          </div>
+          
           <button type="submit" 
             className="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-xl hover:bg-indigo-700 transition duration-200 shadow-md">
             Sign In
