@@ -12,6 +12,42 @@ The traditional scholarship application process is plagued by confusing eligibil
 
 ---
 
+## 🛑 Problem Statement: The Application Bottleneck
+Current e-governance portals (like NSP or MPTAAS) suffer from severe UX bottlenecks:
+1. **Opaque Eligibility Matrices:** Students do not know which out of the hundreds of scholarships they qualify for. They often apply to the wrong ones and face rejection.
+2. **Redundant Data Entry:** Students must manually fill out identical data (Name, DOB, Income) repeatedly across multiple isolated state and central portals.
+3. **Verification Delays:** Human nodal officers must manually verify thousands of uploaded JPEGs (Aadhaar, PAN, Marksheets), creating massive backlogs.
+4. **Digital Literacy & Language Barriers:** Complex English forms alienate rural students who primarily speak Hindi and may struggle with standard web forms.
+
+## 🧠 Detailed Approach (Agentic System Architecture)
+ScholarSetu is built as a deterministic, state-machine-driven agentic system. Here is a technical breakdown of its core components for engineers and AI agents reviewing the codebase:
+
+### 1. The Conversational State Machine (`chatbot_service.py`)
+Instead of a static form, data collection is modeled as a Directed Acyclic Graph (DAG) state machine.
+- **State Tracking:** The `ChatSession` model stores a UUID and a JSON blob (`collected_data`). The `current_step` pointer dictates the active node in the graph (e.g., `ask_name` -> `ask_dob` -> `ask_category`).
+- **Conditional Branching:** The state machine evaluates edge transitions dynamically. If `collected_data['ask_state'] != 'MP'`, the machine prunes the `ask_samagra` and `doc_domicile` nodes from the execution path.
+- **Verification Loop:** Before committing a state transition, the engine halts at a `pending_confirmation_step` node, echoing the parsed value to the user ("You entered: X. Is this correct?").
+
+### 2. Multi-Modal Ingestion & Pydantic Validation
+- **Speech & Translation:** The frontend utilizes the native browser `WebSpeechAPI` for STT/TTS. A translation hook intercepts `[HINDI]` payloads, triggering the backend to return a localized string for the active state node.
+- **Strict Typing:** Every user payload is passed through Pydantic validators. For instance, the `ask_pan` node strictly enforces a regex match for `[A-Z]{5}[0-9]{4}[A-Z]{1}` before allowing a state transition.
+
+### 3. OCR Pipeline & Entity Cross-Referencing (`ocr_service.py`)
+- When a document step (e.g., `doc_aadhaar`) is reached, the uploaded binary is routed to `Pillow` and `pytesseract`.
+- **Confidence Scoring:** The OCR engine returns a JSON payload of extracted entities along with a `confidence` float. 
+- **Cross-Referencing:** The backend cross-references the OCR output (e.g., extracted DOB from Aadhaar) against the deterministic data stored in `ChatSession.collected_data`. If the delta exceeds a threshold, the document is flagged for the `/admin` portal manual review queue.
+
+### 4. The Deterministic Matching Engine
+Once the state machine reaches the `complete` node, the Evaluation Engine fires:
+- It iterates through all active `ScholarshipScheme` records in the database.
+- It calculates a `match_score` float by evaluating boolean flags (`is_for_mp_only`, `requires_bpl`) and numerical thresholds (`min_12th_percentage`, `max_family_income`) against the user's `collected_data`.
+- **Achievement Multipliers:** Bonus arrays (like `NTSE` or `JEE`) dynamically boost the match score, unlocking specialized schemes.
+
+### 5. Hydration & Output Generation
+The matched schemes are returned to the React frontend. If the user clicks "View Form", the frontend Maps the JSON `collected_data` keys directly into a pixel-perfect React Component (`FormPreview.jsx`) that visually mimics the actual government portal, achieving zero-friction form completion.
+
+---
+
 ## 🚀 Key Features & Capabilities
 
 ### 1. Conversational Data Collection (Smart Flow)
