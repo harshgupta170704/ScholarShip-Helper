@@ -10,8 +10,14 @@ const LoginPage = () => {
   const [studentAction, setStudentAction] = useState('login'); // 'login' or 'register'
   const navigate = useNavigate();
 
+  const [userId, setUserId] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
   const handleNextStep = (e) => {
     e.preventDefault();
+    setError('');
     if (step === 1) {
       if (role === 'admin') {
         setStep(3); // Admins go straight to login
@@ -23,18 +29,41 @@ const LoginPage = () => {
 
   const handleStudentActionSelection = (action) => {
     setStudentAction(action);
+    setError('');
     setStep(3);
   };
 
-  const handleFinalSubmit = (e) => {
+  const handleFinalSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    
     if (role === 'admin') {
-      navigate('/admin');
+      if (userId === 'admin' && password === 'admin') {
+        navigate('/admin');
+      } else {
+        setError('Invalid Admin credentials. (Hint: use admin/admin)');
+      }
     } else {
       if (studentAction === 'register') {
         navigate('/chat');
       } else {
-        navigate('/track');
+        // Authenticate existing student
+        setLoading(true);
+        try {
+          // Import api here or at top if not imported. Wait, I'll need to import api.
+          // Let's assume we can fetch directly or import.
+          const res = await fetch(`http://127.0.0.1:8000/api/chat/session-by-pan/${userId}`);
+          const data = await res.json();
+          if (data.exists) {
+            navigate('/track', { state: { pan: userId } });
+          } else {
+            setError('PAN Card / Samagra ID not found. Please register as a New User.');
+          }
+        } catch (err) {
+          setError('Error connecting to server.');
+        } finally {
+          setLoading(false);
+        }
       }
     }
   };
@@ -144,6 +173,12 @@ const LoginPage = () => {
                 </div>
               ) : (
                 <>
+                  {error && (
+                    <div className="mb-4 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
+                      {error}
+                    </div>
+                  )}
+                  
                   <div className="mb-4">
                     <label className="block text-gray-700 font-semibold mb-2" htmlFor="userId">
                       {role === 'student' ? 'PAN Card / Samagra ID' : 'Admin ID / Email'}
@@ -152,7 +187,9 @@ const LoginPage = () => {
                       id="userId"
                       type="text" 
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                      value={userId}
+                      onChange={(e) => setUserId(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 uppercase"
                       placeholder={role === 'student' ? 'e.g. ABCDE1234F' : 'admin@scholarsetu.gov'}
                     />
                   </div>
@@ -165,14 +202,16 @@ const LoginPage = () => {
                       id="password"
                       type="password" 
                       required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
                       placeholder="••••••••"
                     />
                   </div>
                   
-                  <button type="submit" 
-                    className="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-xl hover:bg-indigo-700 transition duration-200 shadow-md">
-                    Sign In
+                  <button type="submit" disabled={loading}
+                    className="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-xl hover:bg-indigo-700 transition duration-200 shadow-md disabled:opacity-70">
+                    {loading ? 'Authenticating...' : 'Sign In'}
                   </button>
                 </>
               )}

@@ -1,12 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Search, CheckCircle, Clock, AlertCircle, FileText, ChevronRight } from 'lucide-react';
 import api from '../api';
 
 const TrackPage = () => {
-  const [panNumber, setPanNumber] = useState('');
+  const location = useLocation();
+  const [panNumber, setPanNumber] = useState(location.state?.pan || '');
   const [statusData, setStatusData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (location.state?.pan) {
+      handleTrack(new Event('submit'));
+    }
+  }, []);
 
   const handleTrack = async (e) => {
     e.preventDefault();
